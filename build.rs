@@ -24,7 +24,7 @@ fn selected_version() -> String {
     }
     match selected {
         Some((a, b, c)) => format!("{a}.{b}.{c}"),
-        None => "9.2.0".to_string(),
+        None => "9.3.5".to_string(),
     }
 }
 
@@ -40,35 +40,153 @@ fn version_at_least(version: &str, major: u32, minor: u32, patch: u32) -> bool {
     parse_version(version).is_some_and(|v| v >= (major, minor, patch))
 }
 
-fn download_and_extract(version: &str, out_dir: &str) -> PathBuf {
-    let url = format!("https://github.com/tidesdb/tidesdb/archive/refs/tags/v{version}.tar.gz");
-    let tarball_path = PathBuf::from(out_dir).join(format!("tidesdb-{version}.tar.gz"));
-    let extract_dir = PathBuf::from(out_dir).join("tidesdb-source");
+// BEGIN GENERATED TIDESDB SOURCE ARCHIVES
+cfg_if::cfg_if! {
+    if #[cfg(feature = "v9_3_5")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_3_5::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_3_4")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_3_4::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_3_3")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_3_3::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_3_2")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_3_2::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_3_1")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_3_1::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_3_0")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_3_0::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_2_5")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_2_5::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_2_4")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_2_4::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_2_3")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_2_3::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_2_2")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_2_2::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_2_1")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_2_1::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_2_0")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_2_0::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_1_0")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_1_0::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_0_9")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_0_9::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_0_8")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_0_8::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_0_7")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_0_7::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_0_6")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_0_6::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_0_5")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_0_5::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_0_4")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_0_4::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_0_3")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_0_3::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_0_2")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_0_2::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_0_1")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_0_1::archive_path()
+        }
+    }
+    else if #[cfg(feature = "v9_0_0")] {
+        fn source_archive() -> PathBuf {
+            tidesdb_src_v9_0_0::archive_path()
+        }
+    }
+    else {
+        fn source_archive() -> PathBuf {
+            panic!("no tidesdb source crate is enabled; enable a vX_Y_Z feature")
+        }
+    }
+}
 
-    // Skip download if already extracted
+// END GENERATED TIDESDB SOURCE ARCHIVES
+
+fn extract_archive(version: &str, out_dir: &str) -> PathBuf {
+    let archive_path = source_archive();
+    let extract_dir = PathBuf::from(out_dir).join("tidesdb-source");
     let src_dir = extract_dir.join(format!("tidesdb-{version}"));
+
     if src_dir.exists() {
         return src_dir;
     }
 
-    // Download
-    let resp = ureq::get(&url)
-        .call()
-        .unwrap_or_else(|e| panic!("Failed to download tidesdb v{version} from {url}: {e}"));
-    let mut tarball = std::fs::File::create(&tarball_path).expect("Failed to create tarball file");
-    std::io::copy(&mut resp.into_reader(), &mut tarball).expect("Failed to write tarball");
-
-    // Extract
-    let tarball = std::fs::File::open(&tarball_path).expect("Failed to open tarball");
+    let tarball = std::fs::File::open(&archive_path).unwrap_or_else(|e| {
+        panic!(
+            "failed to open TidesDB v{version} source archive {}: {e}",
+            archive_path.display()
+        )
+    });
     let decoder = flate2::read::GzDecoder::new(tarball);
     let mut archive = tar::Archive::new(decoder);
     std::fs::create_dir_all(&extract_dir).expect("Failed to create extract directory");
     archive
         .unpack(&extract_dir)
-        .expect("Failed to extract tarball");
-
-    // Clean up tarball
-    let _ = std::fs::remove_file(&tarball_path);
+        .expect("Failed to extract TidesDB source archive");
 
     src_dir
 }
@@ -79,11 +197,17 @@ fn with_objectstore() -> bool {
 
 fn build_from_source(version: &str) -> PathBuf {
     let out_dir = std::env::var("OUT_DIR").unwrap();
-    let src_dir = download_and_extract(version, &out_dir);
+    let src_dir = extract_archive(version, &out_dir);
 
     let mut cfg = cmake::Config::new(&src_dir);
     cfg.define("TIDESDB_BUILD_TESTS", "OFF")
         .define("BUILD_SHARED_LIBS", "OFF");
+
+    if version_at_least(version, 9, 3, 4) {
+        cfg.define("TIDESDB_WITH_SNAPPY", "OFF")
+            .define("TIDESDB_WITH_LZ4", "OFF")
+            .define("TIDESDB_WITH_ZSTD", "OFF");
+    }
 
     if with_objectstore() {
         cfg.define("TIDESDB_WITH_S3", "ON");
@@ -164,13 +288,16 @@ fn main() {
     println!("cargo:rustc-link-search=native={}/lib", dst.display());
     println!("cargo:rustc-link-lib=static=tidesdb");
 
-    // Link compression dependencies via pkg-config (handles search paths)
     let mut missing = Vec::new();
-    for dep in &["libzstd", "liblz4", "snappy"] {
-        if pkg_config::probe_library(dep).is_err() {
-            let lib_name = dep.strip_prefix("lib").unwrap_or(dep);
-            println!("cargo:rustc-link-lib={lib_name}");
-            missing.push(lib_name);
+    if !version_at_least(&version, 9, 3, 4) {
+        // Older TidesDB releases always compile compression backends into the C
+        // library. v9.3.4+ can build with all optional codecs disabled.
+        for dep in &["libzstd", "liblz4", "snappy"] {
+            if pkg_config::probe_library(dep).is_err() {
+                let lib_name = dep.strip_prefix("lib").unwrap_or(dep);
+                println!("cargo:rustc-link-lib={lib_name}");
+                missing.push(lib_name);
+            }
         }
     }
     // Link S3/object store dependencies (libcurl + openssl)
@@ -189,20 +316,43 @@ fn main() {
     if !missing.is_empty() {
         let mut msg = format!(
             "cargo:warning=Could not find {} via pkg-config, falling back to link by name. \
-             If linking fails, install them:\n\
-             \x20 Debian/Ubuntu: sudo apt install libzstd-dev liblz4-dev libsnappy-dev",
+             If linking fails, install them:",
             missing.join(", ")
         );
-        if with_objectstore() {
-            msg.push_str(" libcurl4-openssl-dev libssl-dev");
+        let needs_compression_deps = !version_at_least(&version, 9, 3, 4);
+
+        let mut debian_packages = Vec::new();
+        let mut macos_packages = Vec::new();
+        let mut windows_packages = Vec::new();
+
+        if needs_compression_deps {
+            debian_packages.extend(["libzstd-dev", "liblz4-dev", "libsnappy-dev"]);
+            macos_packages.extend(["zstd", "lz4", "snappy"]);
+            windows_packages.extend(["zstd:x64-windows", "lz4:x64-windows", "snappy:x64-windows"]);
         }
-        msg.push_str("\n\x20 macOS:         brew install zstd lz4 snappy");
         if with_objectstore() {
-            msg.push_str(" curl openssl");
+            debian_packages.extend(["libcurl4-openssl-dev", "libssl-dev"]);
+            macos_packages.extend(["curl", "openssl"]);
+            windows_packages.extend(["curl:x64-windows", "openssl:x64-windows"]);
         }
-        msg.push_str("\n\x20 Windows:       vcpkg install zstd:x64-windows lz4:x64-windows snappy:x64-windows");
-        if with_objectstore() {
-            msg.push_str(" curl:x64-windows openssl:x64-windows");
+
+        if !debian_packages.is_empty() {
+            msg.push_str(&format!(
+                "\n\x20 Debian/Ubuntu: sudo apt install {}",
+                debian_packages.join(" ")
+            ));
+        }
+        if !macos_packages.is_empty() {
+            msg.push_str(&format!(
+                "\n\x20 macOS:         brew install {}",
+                macos_packages.join(" ")
+            ));
+        }
+        if !windows_packages.is_empty() {
+            msg.push_str(&format!(
+                "\n\x20 Windows:       vcpkg install {}",
+                windows_packages.join(" ")
+            ));
         }
         println!("{msg}");
     }
